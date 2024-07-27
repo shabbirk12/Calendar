@@ -1,0 +1,172 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const daysContainer = document.getElementById('days-container');
+    const monthYear = document.getElementById('month-year');
+    const modal = document.getElementById('modal');
+    const noteTextarea = document.getElementById('note');
+    const fileUpload = document.getElementById('file-upload');
+    const colorGrid = document.getElementById('color-grid');
+    let currentDay = null;
+    let currentDate = new Date();
+    let selectedColor = '#ffffff';  // Default color
+
+    // Define color options
+    const colors = [
+        '#FF5733', '#33FF57', '#3357FF', '#F333FF', '#FF8C00', '#8A2BE2',
+        '#5F9EA0', '#D2691E', '#FF4500', '#DA70D6', '#7FFF00', '#DCDCDC',
+        '#FF6347', '#4682B4', '#32CD32', '#FFD700', '#ADFF2F', '#FF1493',
+        '#7CFC00', '#FF00FF', '#FFB6C1', '#DC143C', '#1E90FF', '#00FF00',
+        '#B0C4DE', '#DAA520', '#FF4500', '#2E8B57', '#40E0D0', '#B22222',
+        '#FF6347', '#00BFFF', '#FFD700', '#8B0000', '#006400', '#D3D3D3',
+        '#708090', '#C71585', '#8B4513', '#6B8E23', '#9ACD32', '#ADFF2F'
+    ];
+
+    function generateColorGrid() {
+        colorGrid.innerHTML = '';  // Clear existing colors
+        colors.forEach(color => {
+            const colorDiv = document.createElement('div');
+            colorDiv.classList.add('color-option');
+            colorDiv.style.backgroundColor = color;
+            colorDiv.addEventListener('click', () => selectColor(color));
+            colorGrid.appendChild(colorDiv);
+        });
+    }
+
+    function selectColor(color) {
+        selectedColor = color;
+        document.querySelectorAll('.color-option').forEach(div => {
+            div.classList.remove('selected');
+        });
+        document.querySelector(`.color-option[style*="${color}"]`).classList.add('selected');
+    }
+
+    function generateCalendar(date) {
+        daysContainer.innerHTML = '';
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const daysInPrevMonth = new Date(year, month, 0).getDate();
+        monthYear.innerHTML = `${date.toLocaleString('default', { month: 'long' })} ${year}`;
+
+        // Generate previous month's days
+        for (let i = firstDay - 1; i >= 0; i--) {
+            const prevDay = document.createElement('div');
+            prevDay.classList.add('day', 'disabled');
+            prevDay.innerText = daysInPrevMonth - i;
+            daysContainer.appendChild(prevDay);
+        }
+
+        // Generate current month's days
+        for (let i = 1; i <= daysInMonth; i++) {
+            const day = document.createElement('div');
+            day.classList.add('day');
+            day.dataset.day = i;
+            const savedColor = localStorage.getItem(`color-${year}-${month}-${i}`) || '#ffffff';
+            day.style.backgroundColor = savedColor;
+            day.innerHTML = `${i} <span class="icon" onclick="viewDocument(${i})">?</span>`;
+            day.addEventListener('click', (e) => openModal(e, i));
+            if (year === currentDate.getFullYear() && month === currentDate.getMonth() && i === currentDate.getDate()) {
+                day.classList.add('current-day');
+            }
+            if (localStorage.getItem(`note-${year}-${month}-${i}`) || localStorage.getItem(`file-${year}-${month}-${i}`)) {
+                day.classList.add('has-note');
+            }
+            daysContainer.appendChild(day);
+        }
+
+        // Generate next month's days
+        const nextDays = 42 - daysContainer.childNodes.length;
+        for (let i = 1; i <= nextDays; i++) {
+            const nextDay = document.createElement('div');
+            nextDay.classList.add('day', 'disabled');
+            nextDay.innerText = i;
+            daysContainer.appendChild(nextDay);
+        }
+    }
+
+    function openModal(event, day) {
+        event.stopPropagation();
+        currentDay = day;
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const note = localStorage.getItem(`note-${year}-${month}-${day}`) || '';
+        const fileURL = localStorage.getItem(`file-${year}-${month}-${day}`) || '';
+        noteTextarea.value = note;
+        fileUpload.value = '';
+        selectedColor = localStorage.getItem(`color-${year}-${month}-${day}`) || '#ffffff';
+        document.querySelectorAll('.color-option').forEach(div => {
+            if (div.style.backgroundColor === selectedColor) {
+                div.classList.add('selected');
+            } else {
+                div.classList.remove('selected');
+            }
+        });
+        if (fileURL) {
+            document.querySelector(`#days-container .day[data-day='${day}'] .icon`).style.display = 'inline';
+        }
+        modal.classList.remove('hidden');
+    }
+
+    window.saveNote = () => {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const note = noteTextarea.value;
+        const file = fileUpload.files[0];
+        if (file) {
+            const fileURL = URL.createObjectURL(file);
+            localStorage.setItem(`file-${year}-${month}-${currentDay}`, fileURL);
+        }
+        localStorage.setItem(`note-${year}-${month}-${currentDay}`, note);
+        localStorage.setItem(`color-${year}-${month}-${currentDay}`, selectedColor);
+        const dayElement = document.querySelector(`.day[data-day='${currentDay}']`);
+        if (note || file) {
+            dayElement.classList.add('has-note');
+        } else {
+            dayElement.classList.remove('has-note');
+        }
+        dayElement.style.backgroundColor = selectedColor;
+        modal.classList.add('hidden');
+    }
+
+    window.viewDocument = (day) => {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const fileURL = localStorage.getItem(`file-${year}-${month}-${day}`);
+        if (fileURL) {
+            window.open(fileURL, '_blank');
+        } else {
+            alert('No document linked for this day');
+        }
+    }
+
+    window.addEventListener('click', () => {
+        modal.classList.add('hidden');
+    });
+
+    modal.addEventListener('click', (event) => {
+        event.stopPropagation();
+    });
+
+    document.getElementById('prev-month').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        generateCalendar(currentDate);
+    });
+
+    document.getElementById('next-month').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        generateCalendar(currentDate);
+    });
+
+    document.getElementById('prev-year').addEventListener('click', () => {
+        currentDate.setFullYear(currentDate.getFullYear() - 1);
+        generateCalendar(currentDate);
+    });
+
+    document.getElementById('next-year').addEventListener('click', () => {
+        currentDate.setFullYear(currentDate.getFullYear() + 1);
+        generateCalendar(currentDate);
+    });
+
+    generateColorGrid();
+    generateCalendar(currentDate);
+});

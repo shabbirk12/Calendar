@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Calendar</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="calendar-container">
+        <div id="calendar-controls">
+            <button id="prev-year">&lt;&lt;</button>
+            <button id="prev-month">&lt;</button>
+            <span id="month-year"></span>
+            <button id="next-month">&gt;</button>
+            <button id="next-year">&gt;&gt;</button>
+        </div>
+        <div id="days-of-week">
+            <div class="day-header">SUN</div>
+            <div class="day-header">MON</div>
+            <div class="day-header">TUE</div>
+            <div class="day-header">WED</div>
+            <div class="day-header">THU</div>
+            <div class="day-header">FRI</div>
+            <div class="day-header">SAT</div>
+        </div>
+        <div id="days-container"></div>
+    </div>
+
+    <div id="modal" class="hidden">
+        <h2>Save Note</h2>
+        <textarea id="note" placeholder="Enter your note here..."></textarea>
+        <input type="file" id="file-upload" />
+        <div id="color-grid">
+            <!-- Color options will be generated here -->
+        </div>
+        <button onclick="saveNote()">Save</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
